@@ -39,6 +39,20 @@
             android:theme="@style/Theme.Sudoku">
         </activity>
 
+        <activity
+            android:name=".NombreActivity"
+            android:exported="false"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.Sudoku">
+        </activity>
+
+        <activity
+            android:name=".SudokuActivity"
+            android:exported="false"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.Sudoku">
+        </activity>
+
 
     </application>
 
