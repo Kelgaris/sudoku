@@ -21,10 +21,13 @@ class NombreActivity : AppCompatActivity() {
 
         empezarButton.setOnClickListener{
             val nombre = nombreInput.text.toString().trim()
+            val regex = Regex("^[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+$")
 
             if(nombre.isEmpty()){
                 nombreInput.error = "El nombre no puede estar vacio"
                 return@setOnClickListener
+            }else if(!regex.matches(nombre)){
+                nombreInput.error = "El nombre no puede contener numeros o simbolos"
             }
 
             val intent = Intent(this, SudokuActivity::class.java)

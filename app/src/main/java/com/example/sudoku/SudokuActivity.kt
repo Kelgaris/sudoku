@@ -12,6 +12,7 @@ import android.widget.GridLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import java.util.*
+import android.view.View
 
 class SudokuActivity : AppCompatActivity() {
 
@@ -19,13 +20,19 @@ class SudokuActivity : AppCompatActivity() {
     private var segundos = 0
     private lateinit var handler: Handler
     private lateinit var runnable: Runnable
+    private lateinit var celdas: Array<Array<EditText>>
+    private lateinit var solucion: Array<IntArray>
+    private var celdaActiva: EditText? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.sudoku)
 
         val jugador = intent.getStringExtra("nombre") ?: ""
-        findViewById<TextView>(R.id.tvJugador).text = "Jugador: $jugador"
+        findViewById<TextView>(R.id.tvJugador).text = "Jg: $jugador"
+
+        val dificultad = intent.getStringExtra("dificultad") ?: ""
+        findViewById<TextView>(R.id.mostrarDificultad).text = "Modo: $dificultad"
 
         // Inicializar matriz 9x9
         tablero = Array(9) { IntArray(9) { 0 } }
@@ -39,6 +46,7 @@ class SudokuActivity : AppCompatActivity() {
         gridLayout.post {
             val totalWidth = gridLayout.width
             val cellSize = totalWidth / 9
+            celdas = Array(9) { Array(9) { EditText(this) } }
 
             for (i in 0..8) {
                 for (j in 0..8) {
@@ -69,7 +77,12 @@ class SudokuActivity : AppCompatActivity() {
                         editText.inputType = InputType.TYPE_CLASS_NUMBER
                     }
 
+                    editText.setOnClickListener {
+                        celdaActiva = editText
+                    }
+
                     gridLayout.addView(editText)
+                    celdas[i][j] = editText
                 }
             }
         }
@@ -92,11 +105,34 @@ class SudokuActivity : AppCompatActivity() {
         runnable = object : Runnable {
             override fun run() {
                 segundos++
-                tvTemporizador.text = "Tiempo: ${segundos}s"
+                tvTemporizador.text = "Marca: ${segundos}s"
                 handler.postDelayed(this, 1000)
             }
         }
         handler.post(runnable)
+
+        // Pista
+        val btnPista = findViewById<Button>(R.id.btnPista)
+        // Si la dificultad no es facil el botón esta apagado
+        if(dificultad != "facil"){
+            btnPista.isEnabled = false
+            // Y además lo ocultamos
+            btnPista.visibility = View.GONE
+        }
+
+        btnPista.setOnClickListener{
+            for(i in 0..8){
+                for(j in 0..8){
+                    if(celdas[i][j].text.toString().isEmpty()){
+                        val valorCorrecto = solucion[i][j]
+                        celdas[i][j].setText(valorCorrecto.toString())
+
+                        celdas[i][j].isEnabled = false
+                        return@setOnClickListener
+                    }
+                }
+            }
+        }
     }
 
     override fun onDestroy() {
@@ -111,10 +147,11 @@ class SudokuActivity : AppCompatActivity() {
         for (i in 0..8) for (j in 0..8) tablero[i][j] = 0
 
         // Usar backtracking para generar un tablero completo
-        resolverSudoku(tablero)
+        resolverSudoku(tablero) // Tablero completo
+        solucion = tablero.map { it.clone() }.toTypedArray() // Copia del tablero para la comprobacion
 
         // Borrar celdas aleatoriamente para crear el puzzle
-        borrarCeldas(tablero, 40)
+        borrarCeldas(tablero, 30)
     }
 
     // Backtracking para llenar el tablero completo
