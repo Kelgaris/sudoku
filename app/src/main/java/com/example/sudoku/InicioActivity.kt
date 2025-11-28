@@ -21,7 +21,7 @@ class InicioActivity : AppCompatActivity() {
 
         val puntuacionesButton = findViewById<Button>(R.id.puntuaciones)
         puntuacionesButton.setOnClickListener{
-            val intent = Intent(this, PuntuacionesActivity::class.java)
+            val intent = Intent(this, SeleccionarRankingActivity::class.java)
             startActivity(intent)
             finish()
         }

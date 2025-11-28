@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.text.InputFilter
 import android.text.InputType
+import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.GridLayout
@@ -13,6 +14,9 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import java.util.*
 import android.view.View
+import com.example.sudoku.api.ApiClient
+import com.example.sudoku.model.PuntuacionPost
+import android.widget.Toast
 
 class SudokuActivity : AppCompatActivity() {
 
@@ -23,6 +27,7 @@ class SudokuActivity : AppCompatActivity() {
     private lateinit var celdas: Array<Array<EditText>>
     private lateinit var solucion: Array<IntArray>
     private var celdaActiva: EditText? = null
+    private var tableroListo = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,22 +80,109 @@ class SudokuActivity : AppCompatActivity() {
                         editText.isEnabled = true
                         editText.filters = arrayOf(InputFilter.LengthFilter(1))
                         editText.inputType = InputType.TYPE_CLASS_NUMBER
+
+                        // Mostrar errores solo si no es dificultad difícil
+                        if (dificultad != "dificil") {
+
+                            editText.addTextChangedListener(object : android.text.TextWatcher {
+                                override fun afterTextChanged(s: android.text.Editable?) {
+                                    val text = s.toString()
+
+                                    if (text.isEmpty()) {
+                                        editText.setTextColor(Color.BLACK)
+                                        return
+                                    }
+
+                                    // Detectar fila y columna
+                                    var fila = 0
+                                    var col = 0
+                                    loop@ for (x in 0..8) {
+                                        for (y in 0..8) {
+                                            if (celdas[x][y] == editText) {
+                                                fila = x
+                                                col = y
+                                                break@loop
+                                            }
+                                        }
+                                    }
+
+                                    // Comparar con la solución
+                                    val correcto = solucion[fila][col].toString()
+
+                                    if (text == correcto) {
+                                        editText.setTextColor(Color.BLACK)
+                                    } else {
+                                        editText.setTextColor(Color.RED)
+                                    }
+                                }
+
+                                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+                            })
+                        }
                     }
 
-                    editText.setOnClickListener {
-                        celdaActiva = editText
+                    editText.setOnFocusChangeListener { _, hasFocus ->
+                        if (hasFocus) {
+                            celdaActiva = editText
+                        }
                     }
 
                     gridLayout.addView(editText)
                     celdas[i][j] = editText
                 }
             }
+            tableroListo = true
         }
 
-        // Botón Comprobar
         findViewById<Button>(R.id.btnComprobar).setOnClickListener {
+            if (!tableroListo) return@setOnClickListener
 
+            // Verificar que todas las celdas estén completas
+            for (i in 0..8) {
+                for (j in 0..8) {
+                    val texto = celdas[i][j].text.toString()
+                    if (texto.isEmpty()) {
+                        // Celda vacía → volver al menú
+                        val intent = Intent(this, InicioActivity::class.java)
+                        startActivity(intent)
+                        finish()
+                        return@setOnClickListener
+                    }
+                }
+            }
+
+            // Verificar que todas las celdas coincidan con la solución
+            var todoCorrecto = true
+            for (i in 0..8) {
+                for (j in 0..8) {
+                    val texto = celdas[i][j].text.toString()
+                    val correcto = solucion[i][j].toString()
+                    if (texto != correcto) {
+                        todoCorrecto = false
+                        break
+                    }
+                }
+                if (!todoCorrecto) break
+            }
+
+            if (todoCorrecto) {
+                // Sudoku completo y correcto -> guardar puntuación
+                guardarPuntuacion(nombre = intent.getStringExtra("nombre") ?: "",
+                    tiempo = segundos,
+                    nivel = intent.getStringExtra("dificultad") ?: "")
+                // Mostrar mensaje de éxito
+                Toast.makeText(this, "¡Sudoku completado correctamente!", Toast.LENGTH_SHORT).show()
+                // Volver al menú
+                val intent = Intent(this, InicioActivity::class.java)
+                startActivity(intent)
+                finish()
+            } else {
+                // Sudoku incorrecto -> mostrar mensaje
+                Toast.makeText(this, "El Sudoku tiene errores. No se guardará la puntuación.", Toast.LENGTH_SHORT).show()
+            }
         }
+
 
         // Botón Rendirse
         findViewById<Button>(R.id.btnRendirse).setOnClickListener {
@@ -113,21 +205,31 @@ class SudokuActivity : AppCompatActivity() {
 
         // Pista
         val btnPista = findViewById<Button>(R.id.btnPista)
-        // Si la dificultad no es facil el botón esta apagado
-        if(dificultad != "facil"){
+
+        // Si la dificultad no es facil el botón se apaga y oculta
+        if (dificultad != "facil") {
             btnPista.isEnabled = false
-            // Y además lo ocultamos
             btnPista.visibility = View.GONE
         }
 
-        btnPista.setOnClickListener{
-            for(i in 0..8){
-                for(j in 0..8){
-                    if(celdas[i][j].text.toString().isEmpty()){
-                        val valorCorrecto = solucion[i][j]
-                        celdas[i][j].setText(valorCorrecto.toString())
+        btnPista.setOnClickListener {
+            if (!tableroListo) return@setOnClickListener
+            if (celdaActiva == null) return@setOnClickListener
 
-                        celdas[i][j].isEnabled = false
+            // Buscar la posición de la celda activa
+            for (i in 0..8) {
+                for (j in 0..8) {
+                    if (celdas[i][j] == celdaActiva) {
+
+                        if (celdas[i][j].text.toString().isEmpty()) {
+
+                            val valorCorrecto = solucion[i][j]
+
+                            // Colocar pista
+                            celdas[i][j].setText(valorCorrecto.toString())
+                            celdas[i][j].setTextColor(Color.BLACK)
+                            celdas[i][j].isEnabled = false
+                        }
                         return@setOnClickListener
                     }
                 }
@@ -140,21 +242,16 @@ class SudokuActivity : AppCompatActivity() {
         handler.removeCallbacks(runnable)
     }
 
-
     // Generador de Sudoku
     private fun generarSudoku(tablero: Array<IntArray>) {
-        // Llenar tablero vacío
         for (i in 0..8) for (j in 0..8) tablero[i][j] = 0
 
-        // Usar backtracking para generar un tablero completo
-        resolverSudoku(tablero) // Tablero completo
-        solucion = tablero.map { it.clone() }.toTypedArray() // Copia del tablero para la comprobacion
+        resolverSudoku(tablero)
+        solucion = tablero.map { it.clone() }.toTypedArray()
 
-        // Borrar celdas aleatoriamente para crear el puzzle
         borrarCeldas(tablero, 30)
     }
 
-    // Backtracking para llenar el tablero completo
     private fun resolverSudoku(tablero: Array<IntArray>): Boolean {
         for (fila in 0..8) {
             for (col in 0..8) {
@@ -171,16 +268,14 @@ class SudokuActivity : AppCompatActivity() {
                 }
             }
         }
-        return true // tablero completo
+        return true
     }
 
     private fun esValido(tablero: Array<IntArray>, fila: Int, col: Int, num: Int): Boolean {
-        // Revisar fila y columna
         for (i in 0..8) {
             if (tablero[fila][i] == num || tablero[i][col] == num) return false
         }
 
-        // Revisar subcuadro 3x3
         val startRow = fila / 3 * 3
         val startCol = col / 3 * 3
         for (i in startRow until startRow + 3) {
@@ -191,7 +286,6 @@ class SudokuActivity : AppCompatActivity() {
         return true
     }
 
-    // Borrar aleatoriamente celdas para crear el puzzle
     private fun borrarCeldas(tablero: Array<IntArray>, cantidad: Int) {
         val rand = Random()
         var cont = 0
@@ -204,4 +298,24 @@ class SudokuActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun guardarPuntuacion(nombre: String, tiempo: Int, nivel: String) {
+        val api = ApiClient.instance
+        val puntuacion = PuntuacionPost(nombre = nombre, tiempo = tiempo, nivel = nivel)
+
+        api.guardarPuntuacion(puntuacion).enqueue(object : retrofit2.Callback<Void> {
+            override fun onResponse(call: retrofit2.Call<Void>, response: retrofit2.Response<Void>) {
+                if(response.isSuccessful) {
+                    Log.d("Sudoku", "Puntuación guardada correctamente")
+                } else {
+                    Log.e("Sudoku", "Error al guardar puntuación: ${response.code()}")
+                }
+            }
+
+            override fun onFailure(call: retrofit2.Call<Void>, t: Throwable) {
+                Log.e("Sudoku", "Error de conexión: ${t.message}")
+            }
+        })
+    }
+
 }

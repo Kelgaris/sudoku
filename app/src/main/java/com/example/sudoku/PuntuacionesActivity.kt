@@ -10,5 +10,6 @@ class PuntuacionesActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.puntuaciones)
 
+
     }
 }
