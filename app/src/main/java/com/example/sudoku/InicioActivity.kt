@@ -12,6 +12,7 @@ class InicioActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.inicio)
 
+        // Botton para empezar una nueva partida
         val nuevaPatidaButton = findViewById<Button>(R.id.nuevaPartida)
         nuevaPatidaButton.setOnClickListener{
             val intent = Intent(this, ElegirnivelActivity::class.java, )
@@ -19,6 +20,7 @@ class InicioActivity : AppCompatActivity() {
             finish()
         }
 
+        // Bton Puntuaciones
         val puntuacionesButton = findViewById<Button>(R.id.puntuaciones)
         puntuacionesButton.setOnClickListener{
             val intent = Intent(this, SeleccionarRankingActivity::class.java)
@@ -26,12 +28,14 @@ class InicioActivity : AppCompatActivity() {
             finish()
         }
 
+        // Boton salir
         val salirButton = findViewById<Button>(R.id.salir)
         salirButton.setOnClickListener{
             mostrarConfirmacionSalir()
         }
     }
 
+    // Funcion que nos pregunta si queremos salir de la app.
     private fun mostrarConfirmacionSalir(){
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Salir")

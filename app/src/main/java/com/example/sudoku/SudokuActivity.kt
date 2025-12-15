@@ -20,42 +20,61 @@ import android.widget.Toast
 
 class SudokuActivity : AppCompatActivity() {
 
+    // Delcaramos el tablero
     private lateinit var tablero: Array<IntArray>
+
+    // Temporizador para contar segundos
     private var segundos = 0
+
+    // Handler y runnable para el temporizador
     private lateinit var handler: Handler
     private lateinit var runnable: Runnable
+
+    // Matriz de celdas para cada EditText del tablero
     private lateinit var celdas: Array<Array<EditText>>
+
+    // Guardamos la solucion completa del sudoku
     private lateinit var solucion: Array<IntArray>
+
+    // Guardamos la celda que esta activa
     private var celdaActiva: EditText? = null
+
+    // Controlamos si el tablero ya esta listo.
     private var tableroListo = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.sudoku)
 
+        // Recogemos el nombre del jugador y lo mostramos
         val jugador = intent.getStringExtra("nombre") ?: ""
         findViewById<TextView>(R.id.tvJugador).text = "Jg: $jugador"
 
+        // Recogemos la dificultad del juego y lo mostramos
         val dificultad = intent.getStringExtra("dificultad") ?: ""
         findViewById<TextView>(R.id.mostrarDificultad).text = "Modo: $dificultad"
 
-        // Inicializar matriz 9x9
+        // Inicializamos la matriz 9x9 (El 0 es celda vacia)
         tablero = Array(9) { IntArray(9) { 0 } }
 
-        // Generar Sudoku dinámicamente
+        // Generamos el sudoku de forma dinamica
         generarSudoku(tablero)
 
         val gridLayout = findViewById<GridLayout>(R.id.gridLayoutSudoku)
 
-        // Dibujar tablero
+        // Dibujamos el tablero
         gridLayout.post {
             val totalWidth = gridLayout.width
             val cellSize = totalWidth / 9
+
+            // Creamos la matriz con las celdas editables.
             celdas = Array(9) { Array(9) { EditText(this) } }
 
             for (i in 0..8) {
                 for (j in 0..8) {
                     val editText = EditText(this)
+
+                    // Configuramos el tamaño y posicion de cada celda
                     val params = GridLayout.LayoutParams()
                     params.width = cellSize
                     params.height = cellSize
@@ -64,6 +83,7 @@ class SudokuActivity : AppCompatActivity() {
                     params.setMargins(1, 1, 1, 1)
                     editText.layoutParams = params
 
+                    // Configuramos el aspecto visual de la celda
                     editText.setBackgroundResource(R.drawable.sudoku_celda_bg)
                     editText.setTextColor(Color.BLACK)
                     editText.textAlignment = EditText.TEXT_ALIGNMENT_CENTER
@@ -72,28 +92,32 @@ class SudokuActivity : AppCompatActivity() {
                     editText.setPadding(0, 0, 0, 0)
 
                     val valor = tablero[i][j]
+
+                    // Si la celda tiene valor, se bloquea
                     if (valor != 0) {
                         editText.setText(valor.toString())
                         editText.isEnabled = false
                     } else {
+                        // Si esta vacia permitimos escritura
                         editText.setText("")
                         editText.isEnabled = true
                         editText.filters = arrayOf(InputFilter.LengthFilter(1))
                         editText.inputType = InputType.TYPE_CLASS_NUMBER
 
-                        // Mostrar errores solo si no es dificultad difícil
+                        // Mostramos errores si no estamos jugadndo en dificil
                         if (dificultad != "dificil") {
 
                             editText.addTextChangedListener(object : android.text.TextWatcher {
                                 override fun afterTextChanged(s: android.text.Editable?) {
                                     val text = s.toString()
 
+                                    // Si esta vacia se queda normal.
                                     if (text.isEmpty()) {
                                         editText.setTextColor(Color.BLACK)
                                         return
                                     }
 
-                                    // Detectar fila y columna
+                                    // Buscamos posicion de la celda
                                     var fila = 0
                                     var col = 0
                                     loop@ for (x in 0..8) {
@@ -106,7 +130,7 @@ class SudokuActivity : AppCompatActivity() {
                                         }
                                     }
 
-                                    // Comparar con la solución
+                                    // Comparamos con la solucion
                                     val correcto = solucion[fila][col].toString()
 
                                     if (text == correcto) {
@@ -122,12 +146,14 @@ class SudokuActivity : AppCompatActivity() {
                         }
                     }
 
+                    // Guardamos la celda que tenga el foco
                     editText.setOnFocusChangeListener { _, hasFocus ->
                         if (hasFocus) {
                             celdaActiva = editText
                         }
                     }
 
+                    // Añadimos la celda al GridLayout
                     gridLayout.addView(editText)
                     celdas[i][j] = editText
                 }
@@ -135,10 +161,11 @@ class SudokuActivity : AppCompatActivity() {
             tableroListo = true
         }
 
+        // Boton de comporbar del sudoku
         findViewById<Button>(R.id.btnComprobar).setOnClickListener {
             if (!tableroListo) return@setOnClickListener
 
-            // Verificar que todas las celdas estén completas
+            // Verificamos que no haya celdas vacias
             for (i in 0..8) {
                 for (j in 0..8) {
                     val texto = celdas[i][j].text.toString()
@@ -152,7 +179,7 @@ class SudokuActivity : AppCompatActivity() {
                 }
             }
 
-            // Verificar que todas las celdas coincidan con la solución
+            // Verificamos que todas las celdas coincidan con la solución
             var todoCorrecto = true
             for (i in 0..8) {
                 for (j in 0..8) {
@@ -167,18 +194,18 @@ class SudokuActivity : AppCompatActivity() {
             }
 
             if (todoCorrecto) {
-                // Sudoku completo y correcto -> guardar puntuación
+                // Si el sudoku esta correcto se guarda y mandamos puntuacion
                 guardarPuntuacion(nombre = intent.getStringExtra("nombre") ?: "",
                     tiempo = segundos,
                     nivel = intent.getStringExtra("dificultad") ?: "")
-                // Mostrar mensaje de éxito
+                // Mostramos mensaje de exito
                 Toast.makeText(this, "¡Sudoku completado correctamente!", Toast.LENGTH_SHORT).show()
-                // Volver al menú
+                // Volvemos al menú
                 val intent = Intent(this, InicioActivity::class.java)
                 startActivity(intent)
                 finish()
             } else {
-                // Sudoku incorrecto -> mostrar mensaje
+                // Si el sudoku está mal, mostramos un mensaje
                 Toast.makeText(this, "El Sudoku tiene errores. No se guardará la puntuación.", Toast.LENGTH_SHORT).show()
             }
         }
@@ -203,7 +230,7 @@ class SudokuActivity : AppCompatActivity() {
         }
         handler.post(runnable)
 
-        // Pista
+        // Boton de Pista
         val btnPista = findViewById<Button>(R.id.btnPista)
 
         // Si la dificultad no es facil el botón se apaga y oculta
@@ -216,7 +243,7 @@ class SudokuActivity : AppCompatActivity() {
             if (!tableroListo) return@setOnClickListener
             if (celdaActiva == null) return@setOnClickListener
 
-            // Buscar la posición de la celda activa
+            // Al pulsar el boton rellenamos la celda activa
             for (i in 0..8) {
                 for (j in 0..8) {
                     if (celdas[i][j] == celdaActiva) {
@@ -237,12 +264,13 @@ class SudokuActivity : AppCompatActivity() {
         }
     }
 
+    // Eliminamos el temporizador al cerrar la actividad.
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacks(runnable)
     }
 
-    // Generador de Sudoku
+    // Generamos el sudoku y la solicon
     private fun generarSudoku(tablero: Array<IntArray>) {
         for (i in 0..8) for (j in 0..8) tablero[i][j] = 0
 
@@ -252,6 +280,7 @@ class SudokuActivity : AppCompatActivity() {
         borrarCeldas(tablero, 30)
     }
 
+    // Resolvemos el sudoku usando backtracking
     private fun resolverSudoku(tablero: Array<IntArray>): Boolean {
         for (fila in 0..8) {
             for (col in 0..8) {
@@ -271,6 +300,7 @@ class SudokuActivity : AppCompatActivity() {
         return true
     }
 
+    // Comprobamso qeu el numero es valido.
     private fun esValido(tablero: Array<IntArray>, fila: Int, col: Int, num: Int): Boolean {
         for (i in 0..8) {
             if (tablero[fila][i] == num || tablero[i][col] == num) return false
@@ -286,6 +316,7 @@ class SudokuActivity : AppCompatActivity() {
         return true
     }
 
+    // Borramos celdas para crer espacios vacios.
     private fun borrarCeldas(tablero: Array<IntArray>, cantidad: Int) {
         val rand = Random()
         var cont = 0
@@ -299,6 +330,7 @@ class SudokuActivity : AppCompatActivity() {
         }
     }
 
+    // Guardamos la puntuacion usando la API
     private fun guardarPuntuacion(nombre: String, tiempo: Int, nivel: String) {
         val api = ApiClient.instance
         val puntuacion = PuntuacionPost(nombre = nombre, tiempo = tiempo, nivel = nivel)

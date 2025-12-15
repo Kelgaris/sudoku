@@ -10,6 +10,7 @@ class ElegirnivelActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.elegirnivel)
 
+        // Boton para la dificultad facl
         val facilButton = findViewById<Button>(R.id.facil)
         facilButton.setOnClickListener{
             val intent = Intent(this, NombreActivity::class.java)
@@ -18,6 +19,7 @@ class ElegirnivelActivity : AppCompatActivity() {
             finish()
         }
 
+        // Boton dificultad Media
         val medioButton = findViewById<Button>(R.id.medio)
         medioButton.setOnClickListener{
             val intent = Intent(this, NombreActivity::class.java)
@@ -26,6 +28,7 @@ class ElegirnivelActivity : AppCompatActivity() {
             finish()
         }
 
+        // Boton dificultad Dificil
         val dificilButton = findViewById<Button>(R.id.dificil)
         dificilButton.setOnClickListener{
             val intent = Intent(this, NombreActivity::class.java)

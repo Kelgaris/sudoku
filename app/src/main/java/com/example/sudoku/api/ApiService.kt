@@ -10,10 +10,12 @@ import retrofit2.http.Path
 
 interface ApiService {
 
+    // Recogemos las puntuaciones por nivel y en una lista.
     @GET("puntuaciones/{nivel}")
     fun getPuntuaciones(@Path("nivel") nivel: String): Call<List<Puntuacion>>
 
 
+    // Mandamos la puntuacion obtenida al backend
     @POST("puntuaciones")
     fun guardarPuntuacion(@Body puntuacion: PuntuacionPost): retrofit2.Call<Void>
 

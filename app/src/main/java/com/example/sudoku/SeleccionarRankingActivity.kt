@@ -10,6 +10,7 @@ class SeleccionarRankingActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.seleccionarranking)
 
+        //Boton Ranking para facil
         val facilButton = findViewById<Button>(R.id.facil)
         facilButton.setOnClickListener{
             val intent = Intent(this, PuntuacionesActivity::class.java)
@@ -18,6 +19,7 @@ class SeleccionarRankingActivity : AppCompatActivity() {
             finish()
         }
 
+        //Boton Ranking para media
         val medioButton = findViewById<Button>(R.id.medio)
         medioButton.setOnClickListener{
             val intent = Intent(this, PuntuacionesActivity::class.java)
@@ -26,6 +28,7 @@ class SeleccionarRankingActivity : AppCompatActivity() {
             finish()
         }
 
+        //Botoon Ranking para dificil
         val dificilButton = findViewById<Button>(R.id.dificil)
         dificilButton.setOnClickListener{
             val intent = Intent(this, PuntuacionesActivity::class.java)
